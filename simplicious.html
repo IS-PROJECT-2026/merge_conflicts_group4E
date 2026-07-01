@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simplicious Wachira — Systems & Software</title>
+<style>
+  :root{
+    --bg: #0F1512;
+    --surface: #151E19;
+    --surface-2: #1B261F;
+    --line: #26352C;
+    --text: #E8EDE6;
+    --text-muted: #8A9A8A;
+    --copper: #C87F4A;
+    --signal: #6FA88F;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation: none !important; transition: none !important; }
+  }
+
+  /* subtle PCB trace texture on the background */
+  .traces{
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  .wrap{
+    position: relative;
+    z-index: 1;
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ---------- HEADER ---------- */
+  header{
+    padding: 96px 0 64px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .status{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--signal);
+    margin-bottom: 28px;
+  }
+
+  .dot{
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--signal);
+    box-shadow: 0 0 0 0 rgba(111,168,143,0.6);
+    animation: pulse 2.4s infinite;
+  }
+
+  @keyframes pulse{
+    0%   { box-shadow: 0 0 0 0 rgba(111,168,143,0.5); }
+    70%  { box-shadow: 0 0 0 8px rgba(111,168,143,0); }
+    100% { box-shadow: 0 0 0 0 rgba(111,168,143,0); }
+  }
+
+  h1{
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: clamp(32px, 5vw, 48px);
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    margin-bottom: 14px;
+  }
+
+  h1 span{ color: var(--copper); }
+
+  .role{
+    font-size: 17px;
+    color: var(--text-muted);
+    max-width: 560px;
+    margin-bottom: 28px;
+  }
+
+  .meta-row{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .chip{
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--text-muted);
+    padding: 6px 12px;
+    border-radius: 3px;
+  }
+
+  /* ---------- SECTION SCAFFOLD ---------- */
+  section{
+    padding: 56px 0;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+  }
+
+  .node-label{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--copper);
+    margin-bottom: 24px;
+  }
+
+  .node-label::before{
+    content: '';
+    width: 9px;
+    height: 9px;
+    border: 1px solid var(--copper);
+    transform: rotate(45deg);
+    flex-shrink: 0;
+  }
+
+  .node-label::after{
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  section h2{
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+
+  section p{
+    color: var(--text-muted);
+    max-width: 620px;
+    font-size: 15px;
+  }
+
+  /* ---------- STACK GRID ---------- */
+  .stack-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+
+  .stack-cell{
+    background: var(--surface);
+    padding: 20px;
+  }
+
+  .stack-cell h3{
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--signal);
+    margin-bottom: 10px;
+  }
+
+  .stack-cell ul{
+    list-style: none;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  .stack-cell li{
+    padding: 3px 0;
+  }
+
+  /* ---------- FOCUS / CURRENT WORK ---------- */
+  .focus-card{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 2px solid var(--copper);
+    padding: 20px 24px;
+    margin-bottom: 12px;
+  }
+
+  .focus-card h3{
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .focus-card p{ font-size: 14px; margin: 0; }
+
+  /* ---------- PROJECTS ---------- */
+  .project{
+    padding: 20px 0;
+    border-top: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .project:first-of-type{ border-top: none; }
+
+  .project-title-row{
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .project h3{
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .project-tag{
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--signal);
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  .project p{ font-size: 14px; }
+
+  /* ---------- FOOTER / CONTACT ---------- */
+  footer{
+    padding: 64px 0 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .links{
+    display: flex;
+    gap: 20px;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+
+  .links a{
+    color: var(--text);
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 2px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .links a:hover, .links a:focus-visible{
+    color: var(--copper);
+    border-color: var(--copper);
+  }
+
+  a:focus-visible, .chip:focus-visible{
+    outline: 2px solid var(--copper);
+    outline-offset: 2px;
+  }
+
+  .signoff{
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .signoff em{
+    color: var(--signal);
+    font-style: normal;
+  }
+
+  @media (max-width: 640px){
+    header{ padding: 64px 0 48px; }
+    footer{ flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<svg class="traces" viewBox="0 0 900 1400" preserveAspectRatio="xMidYMin slice" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#26352C" stroke-width="1" fill="none">
+    <path d="M0 120 H180 L210 150 V400 L240 430 H900"/>
+    <path d="M0 340 H100 L130 370 V700 L160 730 H900"/>
+    <path d="M900 90 H700 L670 120 V300 L640 330 H0"/>
+    <path d="M900 500 H760 L730 530 V900 L700 930 H0"/>
+    <path d="M0 900 H220 L250 930 V1200 L280 1230 H900"/>
+    <path d="M900 1100 H620 L590 1130 V1350 L560 1380 H0"/>
+  </g>
+  <g fill="#C87F4A" opacity="0.5">
+    <circle cx="210" cy="150" r="3"/>
+    <circle cx="240" cy="430" r="3"/>
+    <circle cx="670" cy="120" r="3"/>
+    <circle cx="730" cy="530" r="3"/>
+    <circle cx="250" cy="930" r="3"/>
+    <circle cx="590" cy="1130" r="3"/>
+  </g>
+</svg>
+
+<div class="wrap">
+
+  <header>
+    <div class="status"><span class="dot"></span> node online — nairobi, ke</div>
+    <h1>Simplicious Wachira<span>.</span></h1>
+    <p class="role">Final-year BSc Informatics & Computer Science student at Strathmore University. Working across distributed systems, embedded IoT, and cloud infrastructure — with a growing focus on building and deploying microservice pipelines.</p>
+    <div class="meta-row">
+      <span class="chip">strathmore university</span>
+      <span class="chip">ics 4104 · distributed systems</span>
+      <span class="chip">ics 4111 · embedded & iot</span>
+      <span class="chip">github: simpliciouswach</span>
+    </div>
+  </header>
+
+  <section id="stack">
+    <div class="node-label">technical ecosystem</div>
+    <div class="stack-grid">
+      <div class="stack-cell">
+        <h3>Languages</h3>
+        <ul><li>Python</li><li>Java</li><li>JavaScript</li><li>MicroPython</li></ul>
+      </div>
+      <div class="stack-cell">
+        <h3>Cloud & Infra</h3>
+        <ul><li>AWS ECS Fargate</li><li>ECR / CodePipeline</li><li>CodeDeploy (blue/green)</li></ul>
+      </div>
+      <div class="stack-cell">
+        <h3>Systems</h3>
+        <ul><li>Distributed algorithms</li><li>Byzantine faults</li><li>Vector / Lamport clocks</li></ul>
+      </div>
+      <div class="stack-cell">
+        <h3>IoT / Embedded</h3>
+        <ul><li>ESP32</li><li>MQTT + Firebase RTDB</li><li>Sensor telemetry</li></ul>
+      </div>
+      <div class="stack-cell">
+        <h3>Data & ML</h3>
+        <ul><li>TensorFlow / Keras</li><li>Scikit-learn</li><li>TF-IDF + SVD</li></ul>
+      </div>
+      <div class="stack-cell">
+        <h3>Web</h3>
+        <ul><li>Django + PostgreSQL</li><li>Semantic HTML / ARIA</li><li>GitHub Pages</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="focus">
+    <div class="node-label">current focus</div>
+    <div class="focus-card">
+      <h3>Coffee Suppliers — AWS Microservices Lab</h3>
+      <p>ECS Fargate services deployed via a CodeDeploy blue/green pipeline, backed by ECR and CodePipeline. Recent work: tracing a stalled deployment to a task definition revision pointing at a raw Docker Hub reference instead of the ECR image.</p>
+    </div>
+    <div class="focus-card">
+      <h3>ICS 4104 — Distributed Systems</h3>
+      <p>Election algorithms (Bully, Ring), fault models, and coordination protocols.</p>
+    </div>
+  </section>
+
+  <section id="projects">
+    <div class="node-label">projects</div>
+
+    <div class="project">
+      <div class="project-title-row">
+        <h3>GigConnect</h3>
+        <span class="project-tag">django · postgresql · ml</span>
+      </div>
+      <p>Gig marketplace built for the Kenyan market, with a hybrid TF-IDF + Truncated SVD recommendation engine matching workers to jobs. Final-year capstone project.</p>
+    </div>
+
+    <div class="project">
+      <div class="project-title-row">
+        <h3>Vermimonitor</h3>
+        <span class="project-tag">esp32 · micropython · firebase</span>
+      </div>
+      <p>IoT monitoring rig for a vermiculture bed — DHT22, capacitive soil moisture, and pH sensing on an ESP32, publishing telemetry to Firebase Realtime Database.</p>
+    </div>
+
+    <div class="project">
+      <div class="project-title-row">
+        <h3>Wildlife Conservation Page</h3>
+        <span class="project-tag">html · css · js · github pages</span>
+      </div>
+      <p>Semantic, accessible multimedia page built for an ICS 3105 assignment — responsive layout and ARIA support, deployed on GitHub Pages.</p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="links">
+      <a href="https://github.com/SIMPLICIOUSWACH" target="_blank" rel="noopener">GitHub</a>
+      <a href="mailto:simplicious.wachira@strathmore.edu">Email</a>
+    </div>
+    <div class="signoff">building systems · <em>arsenal till i die</em></div>
+  </footer>
+
+</div>
+
+</body>
+</html>
